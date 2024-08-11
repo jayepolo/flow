@@ -14,3 +14,8 @@ __pycache__/
 .DS_Store
 *.log
 *.tmp
+uploads/
+migrations/
+instance/
+.env 
+config.py
