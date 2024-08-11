@@ -1,0 +1,16 @@
+# Ignore virtual environment directory
+venv/
+.venv/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore VS Code settings (optional)
+.vscode/
+
+# Ignore other files you don't want to track
+.DS_Store
+*.log
+*.tmp
