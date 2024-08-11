@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Accepted Transactions{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Accepted Transactions</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h3>Manage Transactions</h3>
+            <div class="mt-4">
+                <button id="deleteAllTransactions" class="btn btn-warning">Delete All Transactions</button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h3>Filter Transactions</h3>
+            {% include 'date_filter.html' %}
+        </div>
+    </div>
+    
+    <table id="transactionsTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Transaction Type</th>
+                <th>Account Type</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Reference No.</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.transaction_type }}</td>
+                <td>{{ transaction.account_type }}</td>
+                <td>{{ transaction.description }}</td>
+                <td>{{ transaction.amount }}</td>
+                <td>{{ transaction.reference_no }}</td>
+                <td>
+                    {% if transaction.category %}
+                        {{ transaction.category.name }}
+                    {% else %}
+                        Uncategorized
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('transactionsTable');
+    const deleteAllButton = document.getElementById('deleteAllTransactions');
+    
+    deleteAllButton.addEventListener('click', function() {
+        if (confirm('Are you sure you want to delete all accepted transactions? This action cannot be undone.')) {
+            fetch('/api/delete_all_transactions', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Clear the table body
+                    table.querySelector('tbody').innerHTML = '';
+                    // Reload the page to show the flash message
+                    window.location.reload();
+                } else {
+                    alert('Failed to delete transactions');
+                }
+            });
+        }
+    });
+
+    // Add sorting functionality
+    table.querySelectorAll('th').forEach(headerCell => {
+        headerCell.addEventListener('click', () => {
+            const columnIndex = Array.from(headerCell.parentElement.children).indexOf(headerCell);
+            const isAscending = headerCell.classList.contains('th-sort-asc');
+
+            sortTableByColumn(table, columnIndex, !isAscending);
+        });
+    });
+
+    function sortTableByColumn(table, column, asc = true) {
+        const dirModifier = asc ? 1 : -1;
+        const tBody = table.tBodies[0];
+        const rows = Array.from(tBody.querySelectorAll('tr'));
+
+        const sortedRows = rows.sort((a, b) => {
+            let aColText = a.querySelector(`td:nth-child(${column + 1})`).textContent.trim();
+            let bColText = b.querySelector(`td:nth-child(${column + 1})`).textContent.trim();
+
+            if (column === 0) {  // Date column
+                return new Date(aColText) > new Date(bColText) ? (1 * dirModifier) : (-1 * dirModifier);
+            } else if (column === 4) {  // Amount column
+                return parseFloat(aColText) > parseFloat(bColText) ? (1 * dirModifier) : (-1 * dirModifier);
+            } else {
+                return aColText > bColText ? (1 * dirModifier) : (-1 * dirModifier);
+            }
+        });
+
+        // Remove all existing TRs from the table
+        while (tBody.firstChild) {
+            tBody.removeChild(tBody.firstChild);
+        }
+
+        // Re-add the newly sorted rows
+        tBody.append(...sortedRows);
+
+        // Remember how the column is currently sorted
+        table.querySelectorAll('th').forEach(th => th.classList.remove('th-sort-asc', 'th-sort-desc'));
+        table.querySelector(`th:nth-child(${column + 1})`).classList.toggle('th-sort-asc', asc);
+        table.querySelector(`th:nth-child(${column + 1})`).classList.toggle('th-sort-desc', !asc);
+    }
+
+    // Listen for the custom filter event
+    document.addEventListener('applyDateFilter', function(event) {
+        const { start, end } = event.detail;
+        filterTransactionsByDate(start, end);
+    });
+
+    // Listen for the clear filter event
+    document.addEventListener('clearDateFilter', clearFilter);
+
+    function filterTransactionsByDate(startDate, endDate) {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const dateCell = row.querySelector('td:first-child');
+            const transactionDate = new Date(dateCell.textContent);
+            if (transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function clearFilter() {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+    }
+});
+</script>
+{% endblock %}

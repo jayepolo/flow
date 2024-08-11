@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Data Processing App{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Welcome to the Data Processing App</h1>
+    {% if current_user.is_authenticated %}
+        <p class="lead">Hello, {{ current_user.username }}!</p>
+        <p>You can now use the app to manage your data, import CSV files, and analyze your transactions.</p>
+        <!-- Add more content and features for authenticated users -->
+    {% else %}
+        <p class="lead">Please <a href="{{ url_for('auth.login') }}">login</a> or <a href="{{ url_for('auth.register') }}">register</a> to use the app.</p>
+    {% endif %}
+</div>
+{% endblock %}

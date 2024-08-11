@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Import Data{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Import Data</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h3>Upload File</h3>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.file.label(class="form-label") }}
+                    {{ form.file(class="form-control") }}
+                </div>
+            </form>
+            <div class="mb-3">
+                {{ form.submit(class="btn btn-primary", form="uploadForm") }}
+                <button id="clearTransactions" class="btn btn-warning ms-2">Clear Transactions</button>
+                <button id="acceptTransactions" class="btn btn-success ms-2">Accept Transactions</button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h3>Filter Transactions</h3>
+            <div class="date-filter-wrapper">
+                {% include 'date_filter.html' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h2>Uploaded Transactions</h2>
+        <table id="transactionsTable" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Include</th>
+                    <th>Date</th>
+                    <th>Transaction Type</th>
+                    <th>Account Type</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Reference No.</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr data-id="{{ transaction.id }}">
+                    <td>
+                        <input type="checkbox" class="include-checkbox" {% if transaction.include %}checked{% endif %}>
+                    </td>
+                    <td contenteditable="true" class="editable" data-field="date">{{ transaction.date }}</td>
+                    <td contenteditable="true" class="editable" data-field="transaction_type">{{ transaction.transaction_type }}</td>
+                    <td contenteditable="true" class="editable" data-field="account_type">{{ transaction.account_type }}</td>
+                    <td contenteditable="true" class="editable" data-field="description">{{ transaction.description }}</td>
+                    <td contenteditable="true" class="editable" data-field="amount">{{ transaction.amount }}</td>
+                    <td contenteditable="true" class="editable" data-field="reference_no">{{ transaction.reference_no }}</td>
+                    <td>
+                        <select class="form-select category-select">
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if transaction.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('transactionsTable');
+    const clearTransactionsBtn = document.getElementById('clearTransactions');
+    const acceptTransactionsBtn = document.getElementById('acceptTransactions');
+    
+    table.addEventListener('change', function(e) {
+        if (e.target.classList.contains('include-checkbox') || e.target.classList.contains('category-select')) {
+            updateTransaction(e.target);
+        }
+    });
+
+    table.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('editable')) {
+            updateTransaction(e.target);
+        }
+    });
+
+    function updateTransaction(element) {
+        const row = element.closest('tr');
+        const transactionId = row.dataset.id;
+        const data = {
+            id: transactionId,
+            include: row.querySelector('.include-checkbox').checked,
+            date: row.querySelector('[data-field="date"]').textContent,
+            transaction_type: row.querySelector('[data-field="transaction_type"]').textContent,
+            account_type: row.querySelector('[data-field="account_type"]').textContent,
+            description: row.querySelector('[data-field="description"]').textContent,
+            amount: row.querySelector('[data-field="amount"]').textContent,
+            reference_no: row.querySelector('[data-field="reference_no"]').textContent,
+            category_id: row.querySelector('.category-select').value
+        };
+
+        fetch('/api/update_transaction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                alert('Failed to update transaction');
+            }
+        });
+    }
+
+    clearTransactionsBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all uploaded transactions?')) {
+            fetch('/api/clear_uploaded_transactions', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Failed to clear transactions');
+                }
+            });
+        }
+    });
+
+    acceptTransactionsBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to accept these transactions?')) {
+            fetch('/api/accept_transactions', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Failed to accept transactions');
+                }
+            });
+        }
+    });
+
+    // Add sorting functionality
+    table.querySelectorAll('th').forEach(headerCell => {
+        headerCell.addEventListener('click', () => {
+            const columnIndex = Array.from(headerCell.parentElement.children).indexOf(headerCell);
+            const isAscending = headerCell.classList.contains('th-sort-asc');
+
+            sortTableByColumn(table, columnIndex, !isAscending);
+        });
+    });
+
+    function sortTableByColumn(table, column, asc = true) {
+        const dirModifier = asc ? 1 : -1;
+        const tBody = table.tBodies[0];
+        const rows = Array.from(tBody.querySelectorAll('tr'));
+
+        const sortedRows = rows.sort((a, b) => {
+            let aColText = a.querySelector(`td:nth-child(${column + 1})`).textContent.trim();
+            let bColText = b.querySelector(`td:nth-child(${column + 1})`).textContent.trim();
+
+            if (column === 1) {  // Date column
+                return new Date(aColText) > new Date(bColText) ? (1 * dirModifier) : (-1 * dirModifier);
+            } else if (column === 5) {  // Amount column
+                return parseFloat(aColText) > parseFloat(bColText) ? (1 * dirModifier) : (-1 * dirModifier);
+            } else {
+                return aColText > bColText ? (1 * dirModifier) : (-1 * dirModifier);
+            }
+        });
+
+        // Remove all existing TRs from the table
+        while (tBody.firstChild) {
+            tBody.removeChild(tBody.firstChild);
+        }
+
+        // Re-add the newly sorted rows
+        tBody.append(...sortedRows);
+
+        // Remember how the column is currently sorted
+        table.querySelectorAll('th').forEach(th => th.classList.remove('th-sort-asc', 'th-sort-desc'));
+        table.querySelector(`th:nth-child(${column + 1})`).classList.toggle('th-sort-asc', asc);
+        table.querySelector(`th:nth-child(${column + 1})`).classList.toggle('th-sort-desc', !asc);
+    }
+
+    // Listen for the custom filter event
+    document.addEventListener('applyDateFilter', function(event) {
+        const { start, end } = event.detail;
+        filterTransactionsByDate(start, end);
+    });
+
+    // Listen for the clear filter event
+    document.addEventListener('clearDateFilter', clearFilter);
+
+    function filterTransactionsByDate(startDate, endDate) {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const dateCell = row.querySelector('td:nth-child(2)');
+            const transactionDate = new Date(dateCell.textContent);
+            if (transactionDate >= new Date(startDate) && transactionDate <= new Date(endDate)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function clearFilter() {
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            row.style.display = '';
+        });
+    }
+});
+</script>
+
+<style>
+    .date-filter-wrapper .date-filter > div:first-child {
+        margin-top: -32px; /* Adjust this value as needed to align with the file input */
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,80 @@
+<div class="date-filter">
+    <select id="dateRangeSelect" class="form-select mb-2">
+        <option value="">Select Date Range</option>
+        <option value="1week">Past Week</option>
+        <option value="30days">Past 30 Days</option>
+        <option value="3months">Past 3 Months</option>
+        <option value="custom">Custom Range</option>
+    </select>
+    <div id="customDateRange" style="display: none;" class="mb-2">
+        <input type="date" id="startDate" class="form-control mb-2" placeholder="Start Date">
+        <input type="date" id="endDate" class="form-control" placeholder="End Date">
+    </div>
+    <div>
+        <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
+        <button id="clearFilter" class="btn btn-secondary ms-2">Clear Filter</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelect = document.getElementById('dateRangeSelect');
+    const customDateRange = document.getElementById('customDateRange');
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    const applyFilterBtn = document.getElementById('applyFilter');
+    const clearFilterBtn = document.getElementById('clearFilter');
+
+    dateRangeSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+
+    applyFilterBtn.addEventListener('click', function() {
+        let filterDates = {};
+        const selectedRange = dateRangeSelect.value;
+
+        if (selectedRange === 'custom') {
+            filterDates.start = startDate.value;
+            filterDates.end = endDate.value;
+        } else {
+            const today = new Date();
+            let startDate = new Date();
+
+            switch (selectedRange) {
+                case '1week':
+                    startDate.setDate(today.getDate() - 7);
+                    break;
+                case '30days':
+                    startDate.setDate(today.getDate() - 30);
+                    break;
+                case '3months':
+                    startDate.setMonth(today.getMonth() - 3);
+                    break;
+                default:
+                    return;  // No filter selected
+            }
+
+            filterDates.start = startDate.toISOString().split('T')[0];
+            filterDates.end = today.toISOString().split('T')[0];
+        }
+
+        // Trigger a custom event with the filter dates
+        const filterEvent = new CustomEvent('applyDateFilter', { detail: filterDates });
+        document.dispatchEvent(filterEvent);
+    });
+
+    clearFilterBtn.addEventListener('click', function() {
+        dateRangeSelect.value = '';
+        customDateRange.style.display = 'none';
+        startDate.value = '';
+        endDate.value = '';
+        // Trigger a custom event to clear the filter
+        const clearEvent = new CustomEvent('clearDateFilter');
+        document.dispatchEvent(clearEvent);
+    });
+});
+</script>
