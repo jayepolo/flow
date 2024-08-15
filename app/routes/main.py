@@ -3,12 +3,15 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 import os
 import csv
+import json
 from datetime import datetime
 from app import db
 from app.models.transaction import UploadedTransaction, AcceptedTransaction, Category
 from app.forms.import_form import ImportForm
+from app.category_management import CategoryManager 
 
 bp = Blueprint('main', __name__)
+cat_man = CategoryManager("app/static/ref/categories.json")
 
 @bp.route('/')
 @bp.route('/index')
@@ -122,24 +125,6 @@ def clear_uploaded_transactions():
     db.session.commit()
     return jsonify({'status': 'success'})
 
-# @bp.route('/api/accept_transactions', methods=['POST'])
-# @login_required
-# def accept_transactions():
-#     uploaded_transactions = UploadedTransaction.query.filter_by(user_id=current_user.id, include=True).all()
-#     for ut in uploaded_transactions:
-#         at = AcceptedTransaction(
-#             date=ut.date,
-#             description=ut.description,
-#             amount=ut.amount,
-#             category_id=ut.category_id,
-#             user_id=ut.user_id
-#         )
-#         db.session.add(at)
-#     UploadedTransaction.query.filter_by(user_id=current_user.id).delete()
-#     db.session.commit()
-#     flash('Transactions accepted successfully', 'success')
-#     return jsonify({'status': 'success'})
-
 @bp.route('/api/accept_transactions', methods=['POST'])
 @login_required
 def accept_transactions():
@@ -168,3 +153,47 @@ def delete_all_transactions():
     db.session.commit()
     flash('All accepted transactions have been deleted successfully', 'success')
     return jsonify({'status': 'success'})
+
+@bp.route('/static', methods=['GET', 'POST'])
+@login_required
+def static_page():
+    categories_file_path = cat_man.json_file_path
+    rules_file_path = os.path.join(current_app.root_path, 'static', 'ref', 'rules.json')
+
+    if request.method == 'POST':
+        if 'save_categories' in request.form:
+            categories_data = request.form['categories_data']
+            try:
+                # Validate JSON
+                json.loads(categories_data)
+                with open(categories_file_path, 'w') as f:
+                    f.write(categories_data)
+                cat_man.load_categories()  # Reload categories in memory
+                flash('Categories have been saved and reloaded.', 'success')
+            except json.JSONDecodeError:
+                flash('Invalid JSON format for categories. Please check your input.', 'error')
+
+        elif 'reload_categories' in request.form:
+            cat_man.load_categories()
+            flash('Categories have been reloaded.', 'success')
+
+        elif 'save_rules' in request.form:
+            rules_data = request.form['rules_data']
+            try:
+                # Validate JSON
+                json.loads(rules_data)
+                with open(rules_file_path, 'w') as f:
+                    f.write(rules_data)
+                flash('Rules have been saved.', 'success')
+            except json.JSONDecodeError:
+                flash('Invalid JSON format for rules. Please check your input.', 'error')
+
+        elif 'reload_rules' in request.form:
+            flash('Rules have been reloaded.', 'success')
+
+    # Get fresh data
+    categories = cat_man.get_raw_json()
+    with open(rules_file_path, 'r') as rules_file:
+        rules = rules_file.read()
+
+    return render_template('static.html', categories=categories, rules=rules)

@@ -1,0 +1,48 @@
+{
+  "Taxes": {},
+  "HealthCare": {
+    "Premium": {},
+    "Expenses": {}
+  },
+  "Apponaug": {
+    "Taxes": {},
+    "Insurance": {},
+    "Maintenance": {},
+    "Repair": {},
+    "Heating": {},
+    "Electricity": {},
+    "Internet": {},
+    "Water": {},
+    "Mobile": {}
+  },
+  "Food": {
+    "Dinner": {},
+    "Groceries": {}
+  },
+  "Auto": {
+    "Purchase": {},
+    "Taxes": {},
+    "Gas": {},
+    "Insurance": {},
+    "Repairs": {}
+  },
+  "Fun": {
+    "Everything": {},
+    "Jay": {},
+    "Ellen": {},
+    "Entertainment": {}
+  },
+  "Misc": {
+    "Household": {},
+    "Cleaning": {},
+    "Clothing": {},
+    "Gifts": {},
+    "Kids": {},
+    "Utah": {}
+  },
+  "Special": {
+    "College": {},
+    "Utah": {}
+  }
+}
+

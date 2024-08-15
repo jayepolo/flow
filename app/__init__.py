@@ -3,12 +3,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import Config
+from .category_management import CategoryManager
+import os
 
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = 'info'
+cat_man = CategoryManager(os.path.join('app', 'static', 'ref', 'categories.json'))
 
 def create_app(config_class=Config):
     app = Flask(__name__)

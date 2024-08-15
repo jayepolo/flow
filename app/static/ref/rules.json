@@ -1,0 +1,15 @@
+{
+    "rule1": {
+      "condition": "transaction.amount > 1000",
+      "action": "set_category('Large Transaction')"
+    },
+    "rule2": {
+      "condition": "transaction.description.contains('GROCERY')",
+      "action": "set_category('Groceries')"
+    },
+    "rule3": {
+      "condition": "transaction.description.contains('RESTAURANT') or transaction.description.contains('FOOD')",
+      "action": "set_category('Dining Out')"
+    }
+  }
+  

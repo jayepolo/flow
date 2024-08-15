@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Static Reference Data</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Categories</h2>
+            <form method="post">
+                <div class="mb-2">
+                    <button type="submit" name="save_categories" class="btn btn-success">Save Categories</button>
+                    <button type="submit" name="reload_categories" class="btn btn-primary">Reload Categories</button>
+                </div>
+                <textarea name="categories_data" class="form-control" style="height: 600px; font-family: monospace;">{{ categories }}</textarea>
+            </form>
+        </div>
+
+        <div class="col-md-6">
+            <h2>Rules</h2>
+            <form method="post">
+                <div class="mb-2">
+                    <button type="submit" name="save_rules" class="btn btn-success">Save Rules</button>
+                    <button type="submit" name="reload_rules" class="btn btn-primary">Reload Rules</button>
+                </div>
+                <textarea name="rules_data" class="form-control" style="height: 600px; font-family: monospace;">{{ rules }}</textarea>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
