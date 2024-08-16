@@ -138,13 +138,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     acceptTransactionsBtn.addEventListener('click', function() {
         if (confirm('Are you sure you want to accept these transactions?')) {
+            var selectedTransactions = [];
+            document.querySelectorAll('#transactionsTable tbody tr:not([style*="display: none"])').forEach(function(row) {
+                if (row.querySelector('.include-checkbox').checked) {
+                    selectedTransactions.push(row.dataset.id);
+                }
+            });
+            
+            console.log("Test 1: Selected transaction IDs being sent to server:", selectedTransactions);
+
             fetch('/api/accept_transactions', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transactions: selectedTransactions }),
             })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    location.reload();
+                    console.log("Server response to /api/accept_transactions: ", data);
+                    // Remove accepted transactions from the table
+                    selectedTransactions.forEach(function(id) {
+                        document.querySelector(`#transactionsTable tr[data-id="${id}"]`).remove();
+                    });
+                    alert('Transactions accepted successfully');
                 } else {
                     alert('Failed to accept transactions');
                 }

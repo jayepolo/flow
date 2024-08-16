@@ -40,6 +40,9 @@ def import_data():
                 csv_reader = csv.DictReader(csv_file)
                 
                 for row in csv_reader:
+                    # Skip empty rows
+                    if not any(row.values()):
+                        continue
                     try:
                         date = datetime.strptime(row['Date'], '%m/%d/%y').date()
                         amount = float(row['Amount'].replace(',', ''))
@@ -135,23 +138,29 @@ def clear_uploaded_transactions():
 @bp.route('/api/accept_transactions', methods=['POST'])
 @login_required
 def accept_transactions():
-    uploaded_transactions = UploadedTransaction.query.filter_by(user_id=current_user.id, include=True).all()
-    for ut in uploaded_transactions:
-        at = AcceptedTransaction(
-            date=ut.date,
-            transaction_type=ut.transaction_type,
-            account_type=ut.account_type,
-            description=ut.description,
-            amount=ut.amount,
-            reference_no=ut.reference_no,
-            category_l1=ut.category_l1,
-            category_l2=ut.category_l2,
-            category_l3=ut.category_l3,
-            user_id=ut.user_id,
-            applied_rules=ut.applied_rules
-        )
-        db.session.add(at)
-    UploadedTransaction.query.filter_by(user_id=current_user.id).delete()
+    data = request.json
+    transaction_ids = data.get('transactions', [])
+    print("Server side view of transactions to be accepted: ", transaction_ids)
+    
+    for transaction_id in transaction_ids:
+        ut = UploadedTransaction.query.filter_by(id=transaction_id, user_id=current_user.id).first()
+        if ut:
+            at = AcceptedTransaction(
+                date=ut.date,
+                transaction_type=ut.transaction_type,
+                account_type=ut.account_type,
+                description=ut.description,
+                amount=ut.amount,
+                reference_no=ut.reference_no,
+                category_l1=ut.category_l1,
+                category_l2=ut.category_l2,
+                category_l3=ut.category_l3,
+                user_id=ut.user_id,
+                applied_rules=ut.applied_rules
+            )
+            db.session.add(at)
+            db.session.delete(ut)
+    
     db.session.commit()
     flash('Transactions accepted successfully', 'success')
     return jsonify({'status': 'success'})
