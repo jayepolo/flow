@@ -45,6 +45,7 @@ def import_data():
                         continue
                     try:
                         date = datetime.strptime(row['Date'], '%m/%d/%y').date()
+                        # date = datetime.strptime(row['date'], '%Y-%m-%d').date()
                         amount = float(row['Amount'].replace(',', ''))
                         
                         transaction = UploadedTransaction(
@@ -123,6 +124,9 @@ def update_transaction():
     if transaction and transaction.user_id == current_user.id:
         for key, value in data.items():
             if key != 'id':
+                if key == 'date':
+                    # Convert the date string to a Python date object
+                    value = datetime.strptime(value, '%Y-%m-%d').date()
                 setattr(transaction, key, value)
         db.session.commit()
         return jsonify({'status': 'success'})

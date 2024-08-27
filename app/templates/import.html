@@ -31,7 +31,6 @@
     </div>
 
     <div class="mt-4">
-        <h2>Uploaded Transactions</h2>
         <table id="transactionsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -41,8 +40,10 @@
                     <th>Account Type</th>
                     <th>Description</th>
                     <th>Amount</th>
-                    <th>Reference No.</th>
-                    <th>Category</th>
+                    <th>Ref No.</th>
+                    <th>Category L1</th>
+                    <th>Category L2</th>
+                    <th>Category L3</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,16 +58,33 @@
                     <td contenteditable="true" class="editable" data-field="description">{{ transaction.description }}</td>
                     <td contenteditable="true" class="editable" data-field="amount">{{ transaction.amount }}</td>
                     <td contenteditable="true" class="editable" data-field="reference_no">{{ transaction.reference_no }}</td>
+
                     <td>
-                        <select class="form-select category-select">
-                            <option value="">Select Category</option>
-                            {% for category in categories %}
-                            <option value="{{ category.id }}" {% if transaction.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        <select class="form-select category-select" data-level="1">
+                            <option value="">Select L1</option>
+                            {% for category in categories if category.level == 1 %}
+                            <option value="{{ category.id }}" {% if transaction.category_l1 == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select category-select" data-level="2">
+                            <option value="">Select L2</option>
+                            {% for category in categories if category.level == 2 %}
+                            <option value="{{ category.id }}" {% if transaction.category_l2 == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select category-select" data-level="3">
+                            <option value="">Select L3</option>
+                            {% for category in categories if category.level == 3 %}
+                            <option value="{{ category.id }}" {% if transaction.category_l3 == category.id %}selected{% endif %}>{{ category.name }}</option>
                             {% endfor %}
                         </select>
                     </td>
                 </tr>
-                {% endfor %}
+                    {% endfor %}
             </tbody>
         </table>
     </div>
@@ -96,13 +114,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = {
             id: transactionId,
             include: row.querySelector('.include-checkbox').checked,
-            date: row.querySelector('[data-field="date"]').textContent,
+            // date: row.querySelector('[data-field="date"]').textContent,
+            date: new Date(row.querySelector('[data-field="date"]').textContent).toISOString().split('T')[0],
             transaction_type: row.querySelector('[data-field="transaction_type"]').textContent,
             account_type: row.querySelector('[data-field="account_type"]').textContent,
             description: row.querySelector('[data-field="description"]').textContent,
             amount: row.querySelector('[data-field="amount"]').textContent,
             reference_no: row.querySelector('[data-field="reference_no"]').textContent,
-            category_id: row.querySelector('.category-select').value
+            category_l1: row.querySelector('.category-select[data-level="1"]').value,
+            category_l2: row.querySelector('.category-select[data-level="2"]').value,
+            category_l3: row.querySelector('.category-select[data-level="3"]').value
         };
 
         fetch('/api/update_transaction', {
@@ -162,7 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     selectedTransactions.forEach(function(id) {
                         document.querySelector(`#transactionsTable tr[data-id="${id}"]`).remove();
                     });
-                    alert('Transactions accepted successfully');
                 } else {
                     alert('Failed to accept transactions');
                 }
